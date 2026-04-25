@@ -1,7 +1,7 @@
 package client;
 
-import model.Command;
-import model.User;
+import models.Command;
+import models.User;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
