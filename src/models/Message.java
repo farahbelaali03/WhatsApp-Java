@@ -1,8 +1,10 @@
 
-package model;
+package models ;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.time.DateTimeFormatter;
+
 
 public class Message implements Serializable {
     private String sender;
