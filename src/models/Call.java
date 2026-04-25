@@ -8,9 +8,9 @@ public class Call implements Serializable {
     public static final String TYPE_AUDIO = "AUDIO";
     public static final String TYPE_VIDEO = "VIDEO";
     public static final String STATUT_EN_ATTENTE = "EN_ATTENTE";
-    public static final String STATUT_ACCEPTE    = "ACCEPTE";
-    public static final String STATUT_REFUSE     = "REFUSE";
-    public static final String STATUT_TERMINE    = "TERMINE";
+    public static final String STATUT_ACCEPTE = "ACCEPTE";
+    public static final String STATUT_REFUSE= "REFUSE";
+    public static final String STATUT_TERMINE = "TERMINE";
 
     private String idCall;
     private String caller;
@@ -22,21 +22,21 @@ public class Call implements Serializable {
     public Call() {}
 
     public Call(String idCall, String caller, String recipient, String callType) {
-        this.idCall    = idCall;
-        this.caller    = caller;
+        this.idCall= idCall;
+        this.caller= caller;
         this.recipient = recipient;
-        this.callType  = callType;
-        this.statut    = STATUT_EN_ATTENTE;
+        this.callType= callType;
+        this.statut= STATUT_EN_ATTENTE;
         this.duration  = 0;
     }
 
     // Getters
-    public String getIdCall()    { return idCall; }
-    public String getCaller()    { return caller; }
+    public String getIdCall() { return idCall; }
+    public String getCaller()  { return caller; }
     public String getRecipient() { return recipient; }
-    public String getCallType()  { return callType; }
-    public String getStatut()    { return statut; }
-    public long getDuration()    { return duration; }
+    public String getCallType() { return callType; }
+    public String getStatut()  { return statut; }
+    public long getDuration() { return duration; }
 
     // Setters
     public void setStatut(String statut)   { this.statut = statut; }
