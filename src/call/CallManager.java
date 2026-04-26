@@ -3,6 +3,12 @@ package call;
 import models.Call;
 import models.Command;
 import media.MediaCapture;
+import interfaces.DialogAppel;
+import interfaces.VideoCallWindow;
+import interfaces.AudioCallWindow;
+import javafx.application.Platform;
+import javafx.scene.control.Alert;
+import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -24,19 +30,23 @@ public class CallManager {
     private String             myUsername;
     private Call               currentCall;
     private MediaCapture       media;
+    private client.Client      clientRef;
 
     // ── Constructeur ──────────────────────────────────────────
     /**
      * @param out        stream TCP d'Afnane (Client.getOut())
      * @param serverIP   IP du serveur pour UDP
      * @param myUsername username du client connecté
+     * @param clientRef  référence au Client d'Afnane
      */
     public CallManager(ObjectOutputStream out,
                        String serverIP,
-                       String myUsername) {
+                       String myUsername,
+                       client.Client clientRef) {
         this.out        = out;
         this.serverIP   = serverIP;
         this.myUsername = myUsername;
+        this.clientRef  = clientRef;
         this.media      = new MediaCapture();
         System.out.println("[CallManager] Initialisé — "
                 + myUsername + " @ " + serverIP);
@@ -44,7 +54,7 @@ public class CallManager {
 
     // ═════════════════════════════════════════════════════════
     // TÂCHE 1 — Appel sortant
-    // Appelée par Amal quand user clique "Appeler"
+    // Appelée par Amal (MainWindow) quand user clique 📞 ou 📹
     // ═════════════════════════════════════════════════════════
 
     /**
@@ -58,7 +68,6 @@ public class CallManager {
             return;
         }
         try {
-            // Format cahier des charges : {caller, recipient, callType}
             String[] data = { myUsername, recipient, callType };
             out.writeObject(new Command(Command.CALL_REQUEST, data));
             out.flush();
@@ -72,28 +81,22 @@ public class CallManager {
 
     // ═════════════════════════════════════════════════════════
     // TÂCHE 2 — Appel entrant
-    // Afnane appelle ces méthodes via setOnIncomingCall()
+    // Appelée par thread d'Afnane via setOnIncomingCall()
     // ═════════════════════════════════════════════════════════
 
     /**
-     * Reçoit l'objet Call du serveur.
-     * Afnane appelle via : client.setOnIncomingCall(call -> callManager.afficherDialogAppel(call))
+     * Reçoit l'objet Call et ouvre le dialog d'Amal.
      * @param call objet Call complet envoyé par Chaimaa
      */
     public void afficherDialogAppel(Call call) {
         this.currentCall = call;
         System.out.println("[CallManager] Appel entrant : " + call);
-        // TODO Amal :
-        // Platform.runLater(() ->
-        //     InterfaceVideoController.afficherDialogAppel(
-        //         call.getCaller(), call.getCallType(), call.getIdCall()
-        //     )
-        // );
+        // DialogAppel d'Amal gère Platform.runLater en interne
+        DialogAppel.afficherDialog(call, clientRef);
     }
 
     /**
-     * User clique "Accepter" dans le dialog d'Amal.
-     * Amal appelle directement : callManager.accepterAppel(callId)
+     * Appelée par Amal quand user clique "Accepter".
      * @param callId identifiant de l'appel
      */
     public void accepterAppel(String callId) {
@@ -114,7 +117,7 @@ public class CallManager {
     }
 
     /**
-     * User clique "Refuser" dans le dialog d'Amal.
+     * Appelée par Amal quand user clique "Refuser".
      * @param callId identifiant de l'appel
      */
     public void refuserAppel(String callId) {
@@ -129,8 +132,6 @@ public class CallManager {
             System.out.println("[CallManager] CALL_REFUSED envoyé : "
                     + callId);
             currentCall = null;
-            // TODO Amal :
-            // Platform.runLater(() -> InterfaceVideoController.fermerDialog())
         } catch (IOException e) {
             System.out.println("[CallManager] Erreur refuserAppel : "
                     + e.getMessage());
@@ -139,14 +140,12 @@ public class CallManager {
 
     // ═════════════════════════════════════════════════════════
     // TÂCHE 3 — Réponse appel sortant
-    // Afnane appelle via setOnCallAccepted() et setOnCallRefused()
+    // Appelée par thread d'Afnane via setOnCallAccepted()
     // ═════════════════════════════════════════════════════════
 
     /**
-     * B a accepté — démarrer média avec senderId et recipientId.
-     * Afnane appelle via :
-     *   client.setOnCallAccepted(call -> callManager.appelAccepte(call))
-     * @param call objet Call avec caller et recipient
+     * B a accepté — démarrer média et ouvrir fenêtre d'Amal.
+     * @param call objet Call avec caller, recipient, callType
      */
     public void appelAccepte(Call call) {
         if (call != null) {
@@ -154,50 +153,63 @@ public class CallManager {
             currentCall.setStatut(Call.STATUT_ACCEPTE);
         }
 
-        // senderId   = moi (myUsername)
-        // recipientId = l'autre participant
         String recipientId = (currentCall != null)
                 ? currentCall.getRecipient()
                 : "";
 
-        // Démarrer capture audio + vidéo + réception UDP
-        // MediaCapture.start() de Farah prend serverIP, senderId, recipientId
+        // Démarrer capture audio+vidéo — Farah
+        // start(serverIP, senderId, recipientId)
         media.start(serverIP, myUsername, recipientId);
-
         System.out.println("[CallManager] Appel accepté — média démarré"
-                + " (audio=" + AUDIO_PORT
-                + ", video=" + VIDEO_PORT + ")");
-        // TODO Amal :
-        // Platform.runLater(() -> InterfaceVideoController.ouvrirEcranVideo())
+                + " (audio=" + AUDIO_PORT + ", video=" + VIDEO_PORT + ")");
+
+        // Ouvrir fenêtre d'Amal selon le type d'appel
+        if (currentCall != null) {
+            String ini   = initiales(recipientId);
+            String color = "#3C3489";
+            String type  = currentCall.getCallType();
+            Platform.runLater(() -> {
+                if (type.equals(Call.TYPE_VIDEO)) {
+                    new VideoCallWindow(recipientId, ini, color)
+                            .start(new Stage());
+                } else {
+                    new AudioCallWindow(recipientId, ini, color)
+                            .start(new Stage());
+                }
+            });
+        }
     }
 
     /**
-     * B a refusé — notifier l'utilisateur.
-     * Afnane appelle via :
-     *   client.setOnCallRefused(() -> callManager.appelRefuse())
+     * B a refusé — afficher alerte.
+     * Appelée par thread d'Afnane via setOnCallRefused()
      */
     public void appelRefuse() {
-        System.out.println("[CallManager] Appel refusé par le destinataire.");
+        System.out.println("[CallManager] Appel refusé.");
         currentCall = null;
-        // TODO Amal :
-        // Platform.runLater(() ->
-        //     InterfacePrincipaleController.afficherNotification("Appel refusé")
-        // )
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Appel refusé");
+            alert.setHeaderText(null);
+            alert.setContentText("L'utilisateur a refusé votre appel.");
+            alert.show();
+        });
     }
 
     /**
-     * Destinataire hors ligne — USER_OFFLINE reçu.
-     * Géré directement dans Client.java d'Afnane.
+     * Destinataire hors ligne.
      * @param username username hors ligne
      */
     public void userOffline(String username) {
         System.out.println("[CallManager] " + username + " est hors ligne.");
         currentCall = null;
-        // TODO Amal :
-        // Platform.runLater(() ->
-        //     InterfacePrincipaleController.afficherNotification(
-        //         "Utilisateur non disponible")
-        // )
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Utilisateur hors ligne");
+            alert.setHeaderText(null);
+            alert.setContentText(username + " n'est pas disponible.");
+            alert.show();
+        });
     }
 
     // ═════════════════════════════════════════════════════════
@@ -205,8 +217,7 @@ public class CallManager {
     // ═════════════════════════════════════════════════════════
 
     /**
-     * User clique "Raccrocher" — bouton d'Amal.
-     * Amal appelle directement : callManager.terminerAppel()
+     * Appelée par Amal quand user clique "Raccrocher".
      */
     public void terminerAppel() {
         if (currentCall == null) {
@@ -224,8 +235,6 @@ public class CallManager {
                     + currentCall.getIdCall());
             media.stop();
             currentCall = null;
-            // TODO Amal :
-            // Platform.runLater(() -> InterfaceVideoController.fermerEcranVideo())
         } catch (IOException e) {
             System.out.println("[CallManager] Erreur terminerAppel : "
                     + e.getMessage());
@@ -234,8 +243,7 @@ public class CallManager {
 
     /**
      * L'autre participant a raccroché.
-     * Afnane appelle via :
-     *   client.setOnCallEnded(() -> callManager.appelTermine())
+     * Appelée par thread d'Afnane via setOnCallEnded()
      */
     public void appelTermine() {
         System.out.println("[CallManager] L'autre participant a raccroché.");
@@ -244,15 +252,33 @@ public class CallManager {
         }
         media.stop();
         currentCall = null;
-        // TODO Amal :
-        // Platform.runLater(() -> {
-        //     InterfaceVideoController.fermerEcranVideo();
-        //     InterfacePrincipaleController.afficherNotification("Appel terminé");
-        // })
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Appel terminé");
+            alert.setHeaderText(null);
+            alert.setContentText("L'appel est terminé.");
+            alert.show();
+        });
+    }
+
+    // ── Méthode utilitaire ────────────────────────────────────
+    /**
+     * Génère les initiales — même logique qu'Amal dans MainWindow.
+     * @param name username
+     * @return initiales en majuscules max 2 caractères
+     */
+    private String initiales(String name) {
+        if (name == null || name.isEmpty()) return "??";
+        String[] parts = name.trim().split("\\s+");
+        if (parts.length == 1)
+            return parts[0].substring(0, Math.min(2, parts[0].length()))
+                    .toUpperCase();
+        return ("" + parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
     }
 
     // ── Getters ───────────────────────────────────────────────
-    public Call   getCurrentCall() { return currentCall; }
-    public String getServerIP()    { return serverIP;    }
-    public String getMyUsername()  { return myUsername;  }
+    public Call          getCurrentCall() { return currentCall; }
+    public String        getServerIP()    { return serverIP;    }
+    public String        getMyUsername()  { return myUsername;  }
+    public client.Client getClientRef()   { return clientRef;   }
 }
