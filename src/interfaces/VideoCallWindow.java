@@ -124,7 +124,11 @@ public class VideoCallWindow {
         endBtn.setOnAction(e -> {
             timer.stop();
             stage.close();
-            // TODO : appeler call.endCall()
+            // appeler call.endCall()
+            call.CallManager cm = LoginWindow.getCallManager();
+            if (cm != null) cm.terminerAppel();
+            timer.stop();
+            stage.close();
         });
 
         VBox micBox  = makeCtrlCol(micBtn,  "Micro");

@@ -1,6 +1,7 @@
 package interfaces;
 
 import client.Client;
+import call.CallManager;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -24,6 +25,9 @@ public class LoginWindow extends javafx.application.Application {
     private TextField portField;
     private Label errorLabel;
     private Button connectBtn;
+
+    private static CallManager callManager;
+    public static CallManager getCallManager() { return callManager; }
 
     // Constructeur sans argument (pour instanciation depuis Main)
     public LoginWindow() {}
@@ -148,6 +152,13 @@ public class LoginWindow extends javafx.application.Application {
 
             Platform.runLater(() -> {
                 if (client.isConnecte()) {
+                    callManager = new CallManager(
+                            client.getOut(), ip, username, client
+                    );
+                    client.setOnIncomingCall(c -> callManager.afficherDialogAppel(c));
+                    client.setOnCallAccepted(c -> callManager.appelAccepte(c));
+                    client.setOnCallRefused(() -> callManager.appelRefuse());
+                    client.setOnCallEnded(() -> callManager.appelTermine());
                     // Succès → ouvrir MainWindow
                     System.out.println("[LoginWindow] Connecté : " + username);
                     MainWindow mainWindow = new MainWindow(username, client);

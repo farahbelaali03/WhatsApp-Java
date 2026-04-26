@@ -75,7 +75,9 @@ public class DialogAppel {
             );
             acceptBtn.setOnAction(e -> {
                 dialog.close();
-                // TODO : appeler souraya.accepterAppel(callId)
+                // accepterAppel(callId)
+                call.CallManager cm = LoginWindow.getCallManager();
+                if (cm != null) cm.accepterAppel(callId);
                 System.out.println("[DialogAppel] Appel accepté : " + callId);
                 // Ouvrir la bonne fenêtre selon le type
                 String ini2 = caller.length() >= 2 ? caller.substring(0, 2).toUpperCase() : caller.toUpperCase();
@@ -94,7 +96,9 @@ public class DialogAppel {
             );
             refuseBtn.setOnAction(e -> {
                 dialog.close();
-                // TODO : appeler souraya.refuserAppel(callId)
+                // refuserAppel(callId)
+                call.CallManager cm = LoginWindow.getCallManager();
+                if (cm != null) cm.refuserAppel(callId);
                 System.out.println("[DialogAppel] Appel refusé : " + callId);
             });
 

@@ -12,7 +12,6 @@ import javafx.scene.text.*;
 import javafx.stage.Stage;
 import java.util.List;
 
-import static javafx.application.Platform.runLater;
 
 /**
  * Écran principal.
@@ -166,12 +165,19 @@ public class MainWindow {
 
         Button callBtn = new Button("📞");
         callBtn.setStyle("-fx-background-color:transparent; -fx-font-size:14px; -fx-cursor:hand;");
-        callBtn.setOnAction(e -> new AudioCallWindow(username, ini, color).start(new Stage()));
+        callBtn.setOnAction(e -> {
+            call.CallManager cm = LoginWindow.getCallManager();
+            if (cm != null) cm.demandeAppel(username, models.Call.TYPE_AUDIO);
+            new AudioCallWindow(username, ini, color).start(new Stage());
+        });
 
         Button videoBtn = new Button("📹");
         videoBtn.setStyle("-fx-background-color:transparent; -fx-font-size:14px; -fx-cursor:hand;");
-        videoBtn.setOnAction(e -> new VideoCallWindow(username, ini, color).start(new Stage()));
-
+        videoBtn.setOnAction(e -> {
+            call.CallManager cm = LoginWindow.getCallManager();
+            if (cm != null) cm.demandeAppel(username, models.Call.TYPE_VIDEO);
+            new VideoCallWindow(username, ini, color).start(new Stage());
+        });
         HBox row = new HBox(12, avatar, info, new Pane(), callBtn, videoBtn);
         HBox.setHgrow(info, Priority.ALWAYS);
         row.setAlignment(Pos.CENTER_LEFT);
@@ -219,7 +225,4 @@ public class MainWindow {
         return btn;
     }
 
-    private void run() {
-        runLater(() -> mettreAJourListe(client.getUtilisateursConnectes()));
-    }
 }
