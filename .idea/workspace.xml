@@ -44,6 +44,11 @@
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\HP\IdeaProjects\WhatsApp-Java\src" />
+    </key>
+  </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="0f92e8d1-04e6-40b7-8481-411a3428e585" name="Changes" comment="" />
