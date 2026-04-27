@@ -94,13 +94,6 @@ public class MainWindow {
                 Platform.runLater(() -> mettreAJourListe(client.getUtilisateursConnectes()))
         );
 
-        //  CALLBACK APPEL ENTRANT — affiche DialogAppel quand quelqu'un appelle
-        client.setOnIncomingCall((call) -> {
-            Platform.runLater(() -> {
-                DialogAppel.afficherDialog(call, client);
-            });
-        });
-
         ScrollPane scroll = new ScrollPane(contactList);
         scroll.setFitToWidth(true);
         scroll.setStyle("-fx-background-color:#111B21; -fx-background:#111B21;");

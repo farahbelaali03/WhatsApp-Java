@@ -58,15 +58,18 @@ public class ChatWindow {
 
         // Bouton appel audio
         Button callBtn = makeIconButton("📞");
-        callBtn.setOnAction(e ->
-                new AudioCallWindow(contactName, contactInitials, contactColor).start(new Stage())
-        );
-
+        callBtn.setOnAction(e -> {
+            call.CallManager cm = LoginWindow.getCallManager();
+            if (cm != null) cm.demandeAppel(contactName, models.Call.TYPE_AUDIO);
+            new AudioCallWindow(contactName, contactInitials, contactColor).start(new Stage());
+        });
         // Bouton appel vidéo
         Button videoBtn = makeIconButton("📹");
-        videoBtn.setOnAction(e ->
-                new VideoCallWindow(contactName, contactInitials, contactColor).start(new Stage())
-        );
+        videoBtn.setOnAction(e -> {
+            call.CallManager cm = LoginWindow.getCallManager();
+            if (cm != null) cm.demandeAppel(contactName, models.Call.TYPE_VIDEO);
+            new VideoCallWindow(contactName, contactInitials, contactColor).start(new Stage());
+        });
 
         HBox header = new HBox(12, avatar, nameBox, new Pane(), callBtn, videoBtn);
         HBox.setHgrow(nameBox, Priority.ALWAYS);
