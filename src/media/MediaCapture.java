@@ -11,7 +11,6 @@ public class MediaCapture {
     // ─── Constructor ──────────────────────────────────────────
     public MediaCapture() {
     }
-
     // ─── Getters ──────────────────────────────────────────────
     public AudioCapture getAudioCapture() { return audioCapture; }
     public VideoCapture getVideoCapture() { return videoCapture; }
@@ -19,13 +18,11 @@ public class MediaCapture {
     public UDPReceiver  getUdpReceiver()  { return udpReceiver; }
 
     // ─── Methods ──────────────────────────────────────────────
-    // Called by Souraya when CALL_ACCEPTED is received
-    // senderId = my username, recipientId = other user's username
-    public void start(String serverIP, String senderId, String recipientId) {
+    /public void start(String serverIP, String senderId, String recipientId) {
         this.udpSender    = new UDPSender(serverIP, 5001, 5002, senderId, recipientId);
         this.audioCapture = new AudioCapture(udpSender);
         this.videoCapture = new VideoCapture(udpSender);
-        this.udpReceiver = new UDPReceiver(5001, 5002);
+        this.udpReceiver  = new UDPReceiver(); // ← no arguments anymore
 
         audioCapture.startCapture();
         videoCapture.startCapture();
