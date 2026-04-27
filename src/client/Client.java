@@ -54,7 +54,7 @@ public class Client {
         this.username = username;
         try {
 
-            socket = new Socket( serverIp ,5000);
+            socket = new Socket( serverIP,5000);
 
             out = new ObjectOutputStream(socket.getOutputStream());
             out.flush();
