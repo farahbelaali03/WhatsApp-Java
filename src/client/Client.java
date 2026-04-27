@@ -45,6 +45,7 @@ public class Client {
     }
 
     public void connecter(String username, String serverIP) {
+
         if (connecte) {
             System.out.println("[Client] Déjà connecté.");
             return;
@@ -52,7 +53,9 @@ public class Client {
 
         this.username = username;
         try {
-            socket = new Socket(serverIP, 5000);
+
+            socket = new Socket( serverIP,5000);
+
             out = new ObjectOutputStream(socket.getOutputStream());
             out.flush();
             in = new ObjectInputStream(socket.getInputStream());
