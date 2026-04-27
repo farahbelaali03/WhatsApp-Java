@@ -1,10 +1,13 @@
 package server;
 
+import models.Call;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
 
@@ -12,28 +15,22 @@ public class Server {
     private ServerSocket serverSocket;
     private List<ClientHandler> clients = new ArrayList<>();
     private UDPServer udpServer;
+    private Map<String, Call> activeCalls = new ConcurrentHashMap<>();
 
     public void start() {
         try {
             serverSocket = new ServerSocket(PORT);
             System.out.println("Serveur démarré sur le port " + PORT);
-
-            // Démarrer UDPServer avant d'accepter les clients
             udpServer = new UDPServer();
             udpServer.start();
-
             System.out.println("En attente de connexions...");
-
             while (true) {
                 Socket socket = serverSocket.accept();
-                System.out.println("Nouveau client : "
-                        + socket.getInetAddress());
-                ClientHandler handler =
-                        new ClientHandler(socket, this);
+                System.out.println("Nouveau client : " + socket.getInetAddress());
+                ClientHandler handler = new ClientHandler(socket, this);
                 addClient(handler);
                 handler.start();
             }
-
         } catch (IOException e) {
             System.out.println("Erreur serveur : " + e.getMessage());
         } finally {
@@ -48,8 +45,7 @@ public class Server {
 
     public synchronized void removeClient(ClientHandler handler) {
         clients.remove(handler);
-        System.out.println("Client déconnecté. Restants : "
-                + clients.size());
+        System.out.println("Client déconnecté. Restants : " + clients.size());
     }
 
     public synchronized void broadcast(Object obj) {
@@ -58,8 +54,7 @@ public class Server {
         }
     }
 
-    public synchronized void broadcastExcept(Object obj,
-                                             ClientHandler exclude) {
+    public synchronized void broadcastExcept(Object obj, ClientHandler exclude) {
         for (ClientHandler client : clients) {
             if (client != exclude) {
                 client.send(obj);
@@ -67,8 +62,7 @@ public class Server {
         }
     }
 
-    public synchronized ClientHandler getClientByUsername(
-            String username) {
+    public synchronized ClientHandler getClientByUsername(String username) {
         for (ClientHandler client : clients) {
             if (client.getUser() != null &&
                     client.getUser().getUsername().equals(username)) {
@@ -92,18 +86,19 @@ public class Server {
         return clients.size();
     }
 
+    public Map<String, Call> getActiveCalls() {
+        return activeCalls;
+    }
+
     public void stop() {
         try {
-            if (udpServer != null) {
-                udpServer.stop();
-            }
+            if (udpServer != null) udpServer.stop();
             if (serverSocket != null && !serverSocket.isClosed()) {
                 serverSocket.close();
                 System.out.println("Serveur arrêté.");
             }
         } catch (IOException e) {
-            System.out.println("Erreur arrêt serveur : "
-                    + e.getMessage());
+            System.out.println("Erreur arrêt serveur : " + e.getMessage());
         }
     }
 
