@@ -31,6 +31,9 @@ public class VideoCallWindow {
 
     public void start(Stage stage) {
         stage.setTitle("Appel – " + contactName);
+        javafx.scene.image.ImageView remoteView = new javafx.scene.image.ImageView();
+        javafx.scene.image.ImageView localView  = new javafx.scene.image.ImageView();
+        InterfaceVideoController.setVideoViews(remoteView, localView);
 
         // Vidéo distante
         Label remoteAvatar = new Label(contactInitials);
