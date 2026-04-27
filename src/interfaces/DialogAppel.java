@@ -23,6 +23,9 @@ import javafx.stage.Stage;
  */
 public class DialogAppel {
 
+    public DialogAppel(Call call, Client client) {
+    }
+
     /**
      * Affiche le dialog d'appel entrant.
      * Appelée par Souraya quand INCOMING_CALL arrive.
