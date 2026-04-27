@@ -148,7 +148,7 @@ public class LoginWindow extends javafx.application.Application {
             Client client = new Client();
 
             // Appel de la méthode d'Afnane
-            client.connecter(username);
+            client.connecter(username,ip);
 
             Platform.runLater(() -> {
                 if (client.isConnecte()) {
