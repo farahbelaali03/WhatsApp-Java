@@ -24,7 +24,6 @@ public class ClientHandler extends Thread {
         this.socket = socket;
         this.server = server;
         try {
-            // ObjectOutputStream AVANT ObjectInputStream — obligatoire
             this.out = new ObjectOutputStream(socket.getOutputStream());
             out.flush();
             this.in = new ObjectInputStream(socket.getInputStream());
@@ -50,7 +49,6 @@ public class ClientHandler extends Thread {
                     (user != null ? user.getUsername() : "inconnu"));
         } finally {
             server.removeClient(this);
-            // Broadcaster la nouvelle liste
             broadcastUserList();
             close();
         }
@@ -58,28 +56,17 @@ public class ClientHandler extends Thread {
 
     private void traiterCommande(Command cmd) {
         switch (cmd.getType()) {
-
             case Command.CONNECT:
-                // Créer le User
                 String username = (String) cmd.getData();
-                this.user = new User(
-                        UUID.randomUUID().toString(),
-                        username,
-                        "ONLINE"
-                );
+                this.user = new User(UUID.randomUUID().toString(), username, "ONLINE");
                 System.out.println("[ClientHandler] CONNECT reçu : " + username);
-
-                // Envoyer CONNECT_OK + liste des users
                 List<String> usernames = server.getUsernameList();
                 send(new Command(Command.CONNECT_OK, usernames));
-
-                // Broadcaster la nouvelle liste à tous
                 broadcastUserList();
                 break;
 
             case Command.DISCONNECT:
-                System.out.println("[ClientHandler] DISCONNECT reçu : " +
-                        user.getUsername());
+                System.out.println("[ClientHandler] DISCONNECT reçu : " + user.getUsername());
                 server.removeClient(this);
                 broadcastUserList();
                 close();
@@ -110,14 +97,9 @@ public class ClientHandler extends Thread {
     private void traiterMessage(Message message) {
         System.out.println("[ClientHandler] Message de " +
                 message.getSender() + " à " + message.getRecipient());
-
-        // Trouver le destinataire
         ClientHandler destinataire = server.getClientByUsername(message.getRecipient());
-
         if (destinataire != null) {
-            // Envoyer le message au destinataire
             destinataire.send(message);
-            // Confirmer à l'expéditeur
             send(new Command(Command.MESSAGE_DELIVERED, message.getRecipient()));
             System.out.println("[ClientHandler] Message transmis à " + message.getRecipient());
         } else {
@@ -127,30 +109,18 @@ public class ClientHandler extends Thread {
     }
 
     private void traiterDemandeAppel(Command cmd) {
-        // data = {caller, recipient, callType}
         String[] data = (String[]) cmd.getData();
         String caller    = data[0];
         String recipient = data[1];
         String callType  = data[2];
-
         System.out.println("[ClientHandler] CALL_REQUEST : " + caller + " → " + recipient);
-
-        // Trouver le destinataire
         ClientHandler destinataire = server.getClientByUsername(recipient);
-
         if (destinataire != null) {
-            // Créer le Call
-            Call call = new Call(
-                    UUID.randomUUID().toString(),
-                    caller,
-                    recipient,
-                    callType
-            );
-            // Notifier le destinataire
+            Call call = new Call(UUID.randomUUID().toString(), caller, recipient, callType);
+            server.getActiveCalls().put(call.getIdCall(), call);
             destinataire.send(new Command(Command.INCOMING_CALL, call));
             System.out.println("[ClientHandler] INCOMING_CALL envoyé à " + recipient);
         } else {
-            // Destinataire hors ligne
             send(new Command(Command.USER_OFFLINE, recipient));
             System.out.println("[ClientHandler] " + recipient + " est hors ligne");
         }
@@ -159,8 +129,6 @@ public class ClientHandler extends Thread {
     private void traiterAppelAccepte(Command cmd) {
         String callId = (String) cmd.getData();
         System.out.println("[ClientHandler] CALL_ACCEPTED : " + callId);
-
-        // Notifier l'appelant avec les ports UDP
         String caller = extraireCaller(callId);
         ClientHandler appelant = server.getClientByUsername(caller);
         if (appelant != null) {
@@ -172,7 +140,6 @@ public class ClientHandler extends Thread {
     private void traiterAppelRefuse(Command cmd) {
         String callId = (String) cmd.getData();
         System.out.println("[ClientHandler] CALL_REFUSED : " + callId);
-
         String caller = extraireCaller(callId);
         ClientHandler appelant = server.getClientByUsername(caller);
         if (appelant != null) {
@@ -183,12 +150,11 @@ public class ClientHandler extends Thread {
     private void traiterFinAppel(Command cmd) {
         String callId = (String) cmd.getData();
         System.out.println("[ClientHandler] CALL_END : " + callId);
-        // Notifier l'autre participant
     }
 
     private String extraireCaller(String callId) {
-        // TODO : implémenter avec une Map<callId, Call> dans Server
-        return "";
+        Call call = server.getActiveCalls().get(callId);
+        return call != null ? call.getCaller() : "";
     }
 
     private void broadcastUserList() {

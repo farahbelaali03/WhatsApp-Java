@@ -44,7 +44,8 @@ public class Client {
         this.historiqueMessages = new ArrayList<>();
     }
 
-    public void connecter(String username , String serverIp) {
+    public void connecter(String username, String serverIP) {
+
         if (connecte) {
             System.out.println("[Client] Déjà connecté.");
             return;
@@ -52,7 +53,9 @@ public class Client {
 
         this.username = username;
         try {
+
             socket = new Socket( serverIp ,5000);
+
             out = new ObjectOutputStream(socket.getOutputStream());
             out.flush();
             in = new ObjectInputStream(socket.getInputStream());
