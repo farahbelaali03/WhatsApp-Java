@@ -44,7 +44,7 @@ public class Client {
         this.historiqueMessages = new ArrayList<>();
     }
 
-    public void connecter(String username) {
+    public void connecter(String username , String serverIp) {
         if (connecte) {
             System.out.println("[Client] Déjà connecté.");
             return;
@@ -52,7 +52,7 @@ public class Client {
 
         this.username = username;
         try {
-            socket = new Socket("localhost", 5000);
+            socket = new Socket( serverIp ,5000);
             out = new ObjectOutputStream(socket.getOutputStream());
             out.flush();
             in = new ObjectInputStream(socket.getInputStream());
@@ -166,9 +166,8 @@ public class Client {
                 break;
 
             case Command.CALL_ACCEPTED:
-                Call appelAccepte = (Call) cmd.getData();
                 System.out.println("[Client] Appel accepté !");
-                if (onCallAccepted != null) onCallAccepted.onCall(appelAccepte);
+                if (onCallAccepted != null) onCallAccepted.onCall(null);
                 break;
 
             case Command.CALL_REFUSED:
