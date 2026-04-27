@@ -19,18 +19,17 @@ public class UDPReceiver {
     private boolean isRunning;
 
     // ─── Constructor ──────────────────────────────────────────
-    public UDPReceiver(int audioPort, int videoPort) {
+    public UDPReceiver() {
         try {
-            this.audioSocket = new DatagramSocket(audioPort);
-            this.videoSocket = new DatagramSocket(videoPort);
-            System.out.println("UDPReceiver: audio=" + audioPort + " video=" + videoPort);
+            this.audioSocket = new DatagramSocket(); // OS picks free port
+            this.videoSocket = new DatagramSocket(); // OS picks free port
+            System.out.println("UDPReceiver: audio port="
+                    + audioSocket.getLocalPort()
+                    + " video port=" + videoSocket.getLocalPort());
         } catch (Exception e) {
             System.out.println("UDPReceiver init error: " + e.getMessage());
         }
     }
-
-    // ─── Getters ──────────────────────────────────────────────
-    public boolean isRunning() { return isRunning; }
 
     // ─── Methods ──────────────────────────────────────────────
     public void startReceiving() {
