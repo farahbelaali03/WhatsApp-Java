@@ -166,9 +166,8 @@ public class Client {
                 break;
 
             case Command.CALL_ACCEPTED:
-                Call appelAccepte = (Call) cmd.getData();
                 System.out.println("[Client] Appel accepté !");
-                if (onCallAccepted != null) onCallAccepted.onCall(appelAccepte);
+                if (onCallAccepted != null) onCallAccepted.onCall(null);
                 break;
 
             case Command.CALL_REFUSED:
