@@ -47,25 +47,24 @@ public class UDPSender {
     // ─── Private helper ───────────────────────────────────────
     private void sendPacket(byte[] data, int port, byte type) {
         try {
-            byte[] packet = new byte[9 + data.length];
+            // Header length: 36 (sender) + 36 (recipient) + 1 (type) = 73 bytes
+            byte[] packet = new byte[73 + data.length];
 
-            // senderId as 4 bytes String — matches Chaimae's: new String(data, 0, 4).trim()
-            byte[] senderBytes    = String.format("%-4s", senderId).getBytes();
-            byte[] recipientBytes = String.format("%-4s", recipientId).getBytes();
+            // UUIDs or Usernames as 36 bytes String
+            byte[] senderBytes    = String.format("%-36s", senderId).getBytes();
+            byte[] recipientBytes = String.format("%-36s", recipientId).getBytes();
 
-            packet[0] = senderBytes[0];
-            packet[1] = senderBytes[1];
-            packet[2] = senderBytes[2];
-            packet[3] = senderBytes[3];
+            // Copy 36 bytes for sender
+            System.arraycopy(senderBytes, 0, packet, 0, 36);
 
-            packet[4] = recipientBytes[0];
-            packet[5] = recipientBytes[1];
-            packet[6] = recipientBytes[2];
-            packet[7] = recipientBytes[3];
+            // Copy 36 bytes for recipient
+            System.arraycopy(recipientBytes, 0, packet, 36, 36);
 
-            packet[8] = type;
+            // Type at index 72
+            packet[72] = type;
 
-            System.arraycopy(data, 0, packet, 9, data.length);
+            // Data starts at index 73
+            System.arraycopy(data, 0, packet, 73, data.length);
 
             DatagramPacket dp = new DatagramPacket(
                     packet, packet.length, serverAddress, port

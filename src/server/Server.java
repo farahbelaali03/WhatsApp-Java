@@ -1,5 +1,6 @@
 package server;
 
+import database.DatabaseConnection;
 import models.Call;
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -19,6 +20,15 @@ public class Server {
 
     public void start() {
         try {
+            // ── Initialiser la base de données (XAMPP MySQL) ──
+            System.out.println("═══ Initialisation de la base de données ═══");
+            if (!DatabaseConnection.getInstance().testConnection()) {
+                System.out.println("⚠ ATTENTION : La base de données n'est pas disponible.");
+                System.out.println("  Vérifiez que XAMPP (MySQL) est démarré !");
+                System.out.println("  Le serveur continue sans persistance...");
+            }
+            System.out.println("═══════════════════════════════════════════");
+
             serverSocket = new ServerSocket(PORT);
             System.out.println("Serveur démarré sur le port " + PORT);
             udpServer = new UDPServer();

@@ -17,6 +17,10 @@ public class UDPServer {
     private DatagramSocket videoSocket;
     private boolean running = false;
 
+    // ── DAOs ──────────────────────────────────────────────────
+    private database.SessionDAO sessionDAO;
+    private database.UserDAO    userDAO;
+
     // Map pour stocker l'adresse UDP de chaque client
     // username → adresse IP + port UDP
     private Map<String, InetSocketAddress> udpAddresses
@@ -26,6 +30,14 @@ public class UDPServer {
 
     public void start() {
         try {
+            // Initialiser les DAOs si nécessaire
+            try {
+                this.sessionDAO = new database.SessionDAO();
+                this.userDAO    = new database.UserDAO();
+            } catch (Exception e) {
+                System.out.println("[UDPServer] DAOs non disponibles : " + e.getMessage());
+            }
+
             audioSocket = new DatagramSocket(AUDIO_PORT);
             videoSocket = new DatagramSocket(VIDEO_PORT);
             running = true;
@@ -95,12 +107,18 @@ public class UDPServer {
             int length = packet.getLength();
 
             // Lire le header :
-            // [4 bytes senderId][4 bytes recipientId][1 byte type]
-            if (length < 9) return; // paquet trop petit
+            // [36 bytes senderId][36 bytes recipientId][1 byte type] = 73 bytes
+            if (length < 73) return; // paquet trop petit
 
             // Extraire senderId et recipientId du header
-            String senderId    = new String(data, 0, 4).trim();
-            String recipientId = new String(data, 4, 4).trim();
+            String senderId    = new String(data, 0, 36).trim();
+            String recipientId = new String(data, 36, 36).trim();
+
+            // Vérifier la session si sessionDAO est présent
+            if (sessionDAO != null && !sessionDAO.hasActiveSessionByUsername(senderId)) {
+                System.out.println("[UDPServer] Paquet rejeté : " + senderId + " n'a pas de session active.");
+                return;
+            }
 
             System.out.println("[UDPServer] Paquet de "
                     + senderId + " → " + recipientId);

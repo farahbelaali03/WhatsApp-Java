@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class Message implements Serializable {
+    private String id;
     private String sender;
     private String recipient;
     private String content;
@@ -23,6 +24,7 @@ public class Message implements Serializable {
     }
 
     // Getters
+    public String getId()              { return id; }
     public String getSender()          { return sender; }
     public String getRecipient()       { return recipient; }
     public String getContent()         { return content; }
@@ -30,6 +32,7 @@ public class Message implements Serializable {
     public boolean isRead()            { return isRead; }
 
     // Setters
+    public void setId(String id)               { this.id = id; }
     public void setSender(String sender)       { this.sender = sender; }
     public void setRecipient(String recipient) { this.recipient = recipient; }
     public void setContent(String content)     { this.content = content; }

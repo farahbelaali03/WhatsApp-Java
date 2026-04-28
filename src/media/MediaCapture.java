@@ -18,7 +18,7 @@ public class MediaCapture {
     public UDPReceiver  getUdpReceiver()  { return udpReceiver; }
 
     // ─── Methods ──────────────────────────────────────────────
-    /public void start(String serverIP, String senderId, String recipientId) {
+    public void start(String serverIP, String senderId, String recipientId) {
         this.udpSender    = new UDPSender(serverIP, 5001, 5002, senderId, recipientId);
         this.audioCapture = new AudioCapture(udpSender);
         this.videoCapture = new VideoCapture(udpSender);
