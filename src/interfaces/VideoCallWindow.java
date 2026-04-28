@@ -1,10 +1,13 @@
 package interfaces;
 
+import call.CallManager;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.image.ImageView;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -17,165 +20,121 @@ public class VideoCallWindow {
     private String contactName;
     private String contactInitials;
     private String contactColor;
+    private CallManager callManager;
     private int seconds = 0;
     private Label timerLabel;
     private Timeline timer;
-    private boolean micMuted = false;
-    private boolean camOff   = false;
+    private Stage myStage;
+    private boolean isClosing = false;
 
-    public VideoCallWindow(String contactName, String contactInitials, String contactColor) {
-        this.contactName     = contactName;
+    public VideoCallWindow(String contactName, String contactInitials, String contactColor, CallManager callManager) {
+        this.contactName = contactName;
         this.contactInitials = contactInitials;
-        this.contactColor    = contactColor;
+        this.contactColor = contactColor;
+        this.callManager = callManager;
     }
 
     public void start(Stage stage) {
-        stage.setTitle("Appel – " + contactName);
-        javafx.scene.image.ImageView remoteView = new javafx.scene.image.ImageView();
-        javafx.scene.image.ImageView localView  = new javafx.scene.image.ImageView();
+        this.myStage = stage;
+        stage.setTitle("Appel video - " + contactName);
+
+        // Video distante (grande)
+        ImageView remoteView = new ImageView();
+        remoteView.setFitWidth(500);
+        remoteView.setFitHeight(350);
+        remoteView.setPreserveRatio(true);
+
+        // Video locale (PiP)
+        ImageView localView = new ImageView();
+        localView.setFitWidth(130);
+        localView.setFitHeight(100);
+        localView.setPreserveRatio(true);
+
         InterfaceVideoController.setVideoViews(remoteView, localView);
 
-        // Vidéo distante
         Label remoteAvatar = new Label(contactInitials);
-        remoteAvatar.setMinSize(90, 90);
-        remoteAvatar.setMaxSize(90, 90);
+        remoteAvatar.setMinSize(90, 90); remoteAvatar.setMaxSize(90, 90);
         remoteAvatar.setAlignment(Pos.CENTER);
         remoteAvatar.setFont(Font.font("Arial", FontWeight.BOLD, 28));
         remoteAvatar.setTextFill(Color.WHITE);
-        remoteAvatar.setStyle(
-                "-fx-background-color: " + contactColor + ";" +
-                        "-fx-background-radius: 45px;"
-        );
+        remoteAvatar.setStyle("-fx-background-color: " + contactColor + "; -fx-background-radius: 45px;");
 
         Label remoteName = new Label(contactName);
-        remoteName.setFont(Font.font("Arial", FontWeight.MEDIUM, 18));
+        remoteName.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         remoteName.setTextFill(Color.web("#E9EDEF"));
 
-        Label remoteSub = new Label("Vidéo active");
-        remoteSub.setFont(Font.font("Arial", 13));
-        remoteSub.setTextFill(Color.web("#8696A0"));
+        VBox remoteDefault = new VBox(10, remoteAvatar, remoteName);
+        remoteDefault.setAlignment(Pos.CENTER);
 
-        // Timer
+        StackPane remoteArea = new StackPane(remoteDefault, remoteView);
+        remoteArea.setStyle("-fx-background-color: #0B141A;");
+
         timerLabel = new Label("00:00");
-        timerLabel.setFont(Font.font("DM Mono", 14));
-        timerLabel.setTextFill(Color.web("#E9EDEF"));
-        timerLabel.setStyle(
-                "-fx-background-color: rgba(0,0,0,0.45);" +
-                        "-fx-background-radius: 20px;" +
-                        "-fx-padding: 4px 14px;"
-        );
+        timerLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        timerLabel.setTextFill(Color.WHITE);
+        timerLabel.setStyle("-fx-background-color: rgba(0,0,0,0.5); -fx-background-radius: 20px; -fx-padding: 4px 14px;");
 
         timer = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
             seconds++;
-            int m = seconds / 60, s = seconds % 60;
-            timerLabel.setText(String.format("%02d:%02d", m, s));
+            timerLabel.setText(String.format("%02d:%02d", seconds / 60, seconds % 60));
         }));
         timer.setCycleCount(Timeline.INDEFINITE);
         timer.play();
 
-        // PiP (soi-même)
-        Label selfAvatar = new Label("AM");
-        selfAvatar.setMinSize(36, 36);
-        selfAvatar.setMaxSize(36, 36);
-        selfAvatar.setAlignment(Pos.CENTER);
-        selfAvatar.setFont(Font.font("Arial", FontWeight.BOLD, 12));
-        selfAvatar.setTextFill(Color.WHITE);
-        selfAvatar.setStyle("-fx-background-color: #3C3489; -fx-background-radius: 18px;");
-        StackPane pip = new StackPane(selfAvatar);
-        pip.setMinSize(88, 110);
-        pip.setMaxSize(88, 110);
-        pip.setStyle(
-                "-fx-background-color: #1a2634;" +
-                        "-fx-background-radius: 12px;" +
-                        "-fx-border-color: rgba(255,255,255,0.15);" +
-                        "-fx-border-radius: 12px;" +
-                        "-fx-border-width: 2px;"
-        );
+        StackPane pip = new StackPane(localView);
+        pip.setMinSize(130, 100); pip.setMaxSize(130, 100);
+        pip.setStyle("-fx-background-color: #2A3942; -fx-background-radius: 10px; -fx-border-color: rgba(255,255,255,0.3); -fx-border-radius: 10px; -fx-border-width: 1px;");
 
-        Label quality = new Label("● Qualité excellente  ·  TCP");
-        quality.setFont(Font.font("Arial", 11));
-        quality.setTextFill(Color.web("#8696A0"));
-        quality.setStyle("-fx-background-color: rgba(0,0,0,0.4); -fx-background-radius: 20px; -fx-padding: 3px 12px;");
-
-        VBox remoteArea = new VBox(14, remoteAvatar, remoteName, remoteSub);
-        remoteArea.setAlignment(Pos.CENTER);
-
-        StackPane videoStage = new StackPane();
-        videoStage.setStyle("-fx-background-color: linear-gradient(to bottom, #0B1F1A, #071210);");
-        videoStage.getChildren().addAll(remoteArea, timerLabel, pip, quality);
+        StackPane videoStack = new StackPane();
+        videoStack.setStyle("-fx-background-color: #0B141A;");
+        videoStack.getChildren().addAll(remoteArea, timerLabel, pip);
         StackPane.setAlignment(timerLabel, Pos.TOP_CENTER);
-        StackPane.setMargin(timerLabel, new Insets(16, 0, 0, 0));
+        StackPane.setMargin(timerLabel, new Insets(12, 0, 0, 0));
         StackPane.setAlignment(pip, Pos.TOP_RIGHT);
-        StackPane.setMargin(pip, new Insets(16, 16, 0, 0));
-        StackPane.setAlignment(quality, Pos.BOTTOM_CENTER);
-        StackPane.setMargin(quality, new Insets(0, 0, 16, 0));
+        StackPane.setMargin(pip, new Insets(12, 12, 0, 0));
 
-        // Boutons contrôle
-        Button micBtn  = makeCtrlBtn("🎙️", "#2A3942");
-        Button camBtn  = makeCtrlBtn("📹", "#2A3942");
-        Button endBtn  = makeCtrlBtn("✕",  "#E24B4A");
-        Button spkBtn  = makeCtrlBtn("🔊", "#2A3942");
+        Button micBtn = makeBtn("Micro", "#2A3942");
+        Button camBtn = makeBtn("Camera", "#2A3942");
+        Button endBtn = makeBtn("Raccrocher", "#E24B4A");
+        Button spkBtn = makeBtn("HP", "#2A3942");
 
-        micBtn.setOnAction(e -> {
-            micMuted = !micMuted;
-            micBtn.setText(micMuted ? "🔇" : "🎙️");
-        });
-        camBtn.setOnAction(e -> {
-            camOff = !camOff;
-            camBtn.setText(camOff ? "📵" : "📹");
-        });
-        endBtn.setOnAction(e -> {
-            timer.stop();
-            stage.close();
-            // appeler call.endCall()
-            call.CallManager cm = LoginWindow.getCallManager();
-            if (cm != null) cm.terminerAppel();
-            timer.stop();
-            stage.close();
-        });
+        endBtn.setOnAction(e -> raccrocher());
 
-        VBox micBox  = makeCtrlCol(micBtn,  "Micro");
-        VBox camBox  = makeCtrlCol(camBtn,  "Caméra");
-        VBox endBox  = makeCtrlCol(endBtn,  "Raccrocher");
-        VBox spkBox  = makeCtrlCol(spkBtn,  "HP");
-
-        HBox controls = new HBox(0, micBox, camBox, endBox, spkBox);
+        HBox controls = new HBox(16, micBtn, camBtn, endBtn, spkBtn);
         controls.setAlignment(Pos.CENTER);
         controls.setPadding(new Insets(14, 0, 20, 0));
         controls.setStyle("-fx-background-color: #202C33;");
-        for (var node : controls.getChildren())
-            HBox.setHgrow(node, Priority.ALWAYS);
 
-        VBox root = new VBox(videoStage, controls);
-        VBox.setVgrow(videoStage, Priority.ALWAYS);
+        VBox root = new VBox(videoStack, controls);
+        VBox.setVgrow(videoStack, Priority.ALWAYS);
 
-        Scene scene = new Scene(root, 600, 480);
+        Scene scene = new Scene(root, 620, 520);
         stage.setScene(scene);
-        stage.setOnCloseRequest(e -> timer.stop());
+        stage.setOnCloseRequest(e -> { e.consume(); raccrocher(); });
         stage.show();
     }
 
-    private Button makeCtrlBtn(String icon, String color) {
-        Button btn = new Button(icon);
-        btn.setMinSize(52, 52);
-        btn.setMaxSize(52, 52);
-        btn.setStyle(
-                "-fx-background-color: " + color + ";" +
-                        "-fx-text-fill: white;" +
-                        "-fx-font-size: 18px;" +
-                        "-fx-background-radius: 26px;" +
-                        "-fx-cursor: hand;"
-        );
-        return btn;
+    private void raccrocher() {
+        if (isClosing) return;
+        isClosing = true;
+        if (timer != null) timer.stop();
+        if (myStage != null) { myStage.close(); myStage = null; }
+        callManager.terminerAppel();
     }
 
-    private VBox makeCtrlCol(Button btn, String label) {
-        Label lbl = new Label(label);
-        lbl.setFont(Font.font("Arial", 11));
-        lbl.setTextFill(Color.web("#8696A0"));
-        VBox box = new VBox(6, btn, lbl);
-        box.setAlignment(Pos.CENTER);
-        box.setPadding(new Insets(4, 0, 4, 0));
-        return box;
+    public void fermer() {
+        if (isClosing) return;
+        isClosing = true;
+        if (timer != null) timer.stop();
+        Platform.runLater(() -> {
+            if (myStage != null) { myStage.close(); myStage = null; }
+        });
+    }
+
+    private Button makeBtn(String label, String color) {
+        Button btn = new Button(label);
+        btn.setMinSize(90, 40);
+        btn.setStyle("-fx-background-color: " + color + "; -fx-text-fill: white; -fx-font-size:13px; -fx-background-radius: 20px; -fx-cursor: hand;");
+        return btn;
     }
 }
