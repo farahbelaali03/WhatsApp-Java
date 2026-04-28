@@ -53,7 +53,8 @@ public class Client {
 
         this.username = username;
         try {
-            socket = new Socket(serverIP, 5000);
+
+            socket = new Socket( serverIP,5000);
 
             out = new ObjectOutputStream(socket.getOutputStream());
             out.flush();
@@ -168,10 +169,6 @@ public class Client {
                 break;
 
             case Command.CALL_ACCEPTED:
-                Call appelAccepte = (Call) cmd.getData();
-                System.out.println("[Client] Appel accepté !");
-                if (onCallAccepted != null) onCallAccepted.onCall(appelAccepte);
-
                 System.out.println("[Client] Appel accepté !");
                 if (onCallAccepted != null) onCallAccepted.onCall(null);
                 break;
