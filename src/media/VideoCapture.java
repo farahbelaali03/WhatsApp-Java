@@ -1,23 +1,24 @@
 package media;
 
+import interfaces.InterfaceVideoController;
+import javafx.application.Platform;
+import javafx.scene.image.Image;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
 import org.opencv.imgcodecs.Imgcodecs;
+import java.io.ByteArrayInputStream;
 
 public class VideoCapture {
 
-    // ─── Attributes ───────────────────────────────────────────
     private org.opencv.videoio.VideoCapture camera;
     private Thread captureThread;
     private boolean running;
     private UDPSender udpSender;
 
-    // ─── Constructor ──────────────────────────────────────────
     public VideoCapture(UDPSender udpSender) {
         this.udpSender = udpSender;
     }
 
-    // ─── Methods ──────────────────────────────────────────────
     public void startCapture() {
         nu.pattern.OpenCV.loadLocally();
         camera = new org.opencv.videoio.VideoCapture(0);
@@ -36,11 +37,25 @@ public class VideoCapture {
                     MatOfByte mob = new MatOfByte();
                     Imgcodecs.imencode(".jpg", mat, mob);
                     byte[] bytes = mob.toArray();
+
+                    // Envoyer via UDP au serveur
                     udpSender.sendVideo(bytes);
+
+                    // FIX 6: Afficher la camera locale dans la fenetre video
+                    byte[] bytesCopy = bytes.clone();
+                    Platform.runLater(() -> {
+                        try {
+                            Image localImage = new Image(new ByteArrayInputStream(bytesCopy));
+                            InterfaceVideoController.afficherFrameLocale(localImage);
+                        } catch (Exception ex) {
+                            // ignorer erreurs d'affichage
+                        }
+                    });
                 }
             }
         });
 
+        captureThread.setDaemon(true);
         captureThread.start();
         System.out.println("VideoCapture: started");
     }
